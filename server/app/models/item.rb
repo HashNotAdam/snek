@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Item < ApplicationRecord
   validates :item_type, inclusion: ["food"]
 
@@ -6,16 +8,14 @@ class Item < ApplicationRecord
   end
 
   def duration
-    if food?
-      5
-    end
+    5 if food?
   end
 
   def to_pickup
-    {item_type: item_type, turns_left: duration}
+    { item_type: item_type, turns_left: duration }
   end
 
   def food?
-    item_type == 'food'
+    item_type == "food"
   end
 end

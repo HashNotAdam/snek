@@ -1,8 +1,10 @@
-require 'action_cable_client'
-require 'pry'
+# frozen_string_literal: true
 
-require 'active_support'
-require 'active_support/core_ext/hash/indifferent_access'
+require "action_cable_client"
+require "pry"
+
+require "active_support"
+require "active_support/core_ext/hash/indifferent_access"
 
 require_relative "./util/client.rb"
 require_relative "./random_snake.rb"
@@ -17,21 +19,21 @@ $client = Client.new("http://#{SNEK_HOST}")
 EventMachine.run do
   uri = "ws://#{SNEK_HOST}/cable"
   # We must send an Origin: header else rails is sad
-  client = ActionCableClient.new(uri, 'ClientChannel', true, {'Origin' => "foo"})
+  client = ActionCableClient.new(uri, "ClientChannel", true, "Origin" => "foo")
 
-  client.connected {
+  client.connected do
     puts "successfully connected. You can watch at http://#{SNEK_HOST}"
     @map = $client.map
-  }
+  end
 
-  client.disconnected {
+  client.disconnected do
     @snake_name, @snake_id, @auth_token, @map = nil
     puts "Doh - disconnected - no snek running at #{SNEK_HOST}"
 
     sleep 1
     puts "Attempting to reconnect"
     client.reconnect!
-  }
+  end
 
   client.received do |payload|
     puts "Received game state"
@@ -39,18 +41,18 @@ EventMachine.run do
     if @map
       game_state = payload.fetch("message").with_indifferent_access
 
-      my_snake = game_state.fetch("alive_snakes").detect{|snake| snake.fetch("id") == @snake_id }
+      my_snake = game_state.fetch("alive_snakes").detect { |snake| snake.fetch("id") == @snake_id }
 
       if !my_snake
         # Oh no - there is no my_snake.  Let's make one
-        @snake_name = "#{`whoami`.chomp} #{rand(123123)}"
+        @snake_name = "#{`whoami`.chomp} #{rand(123_123)}"
         puts "Making a new snake: #{@snake_name}"
         response = $client.register_snake(@snake_name)
         @snake_id = response.fetch("snake_id")
         @auth_token = response.fetch("auth_token") # Auth token is required to authenticate moves for our snake
       else
         # Yay - my_snake lives on - Let's get a move
-        move = RandomSnake.new(my_snake, game_state, @map).get_intent
+        move = RandomSnake.new(my_snake, game_state, @map).intent
         puts "Snake is at: #{my_snake.fetch(:head)} - Moving #{@snake_name} #{move}"
         $client.set_intent(@snake_id, move, @auth_token)
       end

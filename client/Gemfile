@@ -1,5 +1,12 @@
-source 'https://rubygems.org'
+# frozen_string_literal: true
 
-gem 'action_cable_client'
-gem 'activesupport'
-gem 'pry'
+source "https://rubygems.org"
+
+gem "action_cable_client"
+gem "activesupport"
+gem "pry"
+
+group :development do
+  gem "rubocop", require: false
+  gem "rubocop-performance", require: false
+end

@@ -1,8 +1,14 @@
-require 'securerandom'
+# frozen_string_literal: true
+
+require "securerandom"
 
 class Snake < ApplicationRecord
-  COLORS = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080']
-  VALID_MOVES = ['N', 'S', 'E', 'W']
+  COLORS = %w[
+    #e6194b #3cb44b #ffe119 #4363d8 #f58231 #911eb4 #46f0f0 #f032e6 #bcf60c
+    #fabebe #008080 #e6beff #9a6324 #fffac8 #800000 #aaffc3 #808000 #ffd8b1
+    #000075 #808080
+  ].freeze
+  VALID_MOVES = %w[N S E W].freeze
 
   validates :name, presence: true
   validates :intent, inclusion: VALID_MOVES, allow_blank: true
@@ -37,13 +43,13 @@ class Snake < ApplicationRecord
   end
 
   def head
-    Position.new(self.head_position)
+    Position.new(head_position)
   end
 
   def segments
-    self.segment_positions.map{|sp|
+    segment_positions.map do |sp|
       Position.new(sp)
-    }
+    end
   end
 
   def set_intent(intent)
@@ -60,24 +66,22 @@ class Snake < ApplicationRecord
     segment_positions.unshift head_position
     segment_positions.pop unless should_grow
     self.head_position = new_tile.to_h
-    self.last_intent = self.intent || self.last_intent
+    self.last_intent = intent || last_intent
     self.intent = nil
     self.length = segment_positions.count + 1 # For head
 
-    self.items.each do |item|
+    items.each do |item|
       item["turns_left"] = item["turns_left"].to_i - 1
     end
 
-    self.items.reject!{|item| item["turns_left"] <= 0 }
+    items.reject! { |item| item["turns_left"] <= 0 }
     save!
   end
 
-  def should_grow?(iteration_count)
-
-  end
+  def should_grow?(iteration_count); end
 
   def has_food?
-    items.detect{|i| i["item_type"] == "food" }.present?
+    items.detect { |i| i["item_type"] == "food" }.present?
   end
 
   def kill

@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 namespace :game do
-  task :run => [:environment] do
+  task run: [:environment] do
     $redis.flushdb
     Snake.delete_all
     game = Game.new
@@ -9,7 +11,7 @@ namespace :game do
       time = Time.now
       game.tick
       puts "Done - #{Time.now - time}"
-      ActionCable.server.broadcast 'client_channel', game
+      ActionCable.server.broadcast "client_channel", game
       sleep 1
     end
   end

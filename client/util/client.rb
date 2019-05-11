@@ -1,14 +1,16 @@
+# frozen_string_literal: true
+
 class Client
   def initialize(url)
     @url = url
   end
 
   def register_snake(name)
-    post("/register_snake", {name: name})
+    post("/register_snake", name: name)
   end
 
   def set_intent(snake_id, intent, auth_token)
-    post("/set_intent", {id: snake_id, intent: intent, auth_token: auth_token})
+    post("/set_intent", id: snake_id, intent: intent, auth_token: auth_token)
   end
 
   def map

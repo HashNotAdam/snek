@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Tile
   include ActiveModel::Serialization
 
@@ -19,9 +21,9 @@ class Tile
 
   def to_s
     if wall?
-      '#'
+      "#"
     else
-      '.'
+      "."
     end
   end
 
@@ -30,7 +32,7 @@ class Tile
   end
 
   def position
-    {x: @x, y: @y}
+    { x: @x, y: @y }
   end
 
   def wall?

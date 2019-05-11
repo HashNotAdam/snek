@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Position
   attr_accessor :x, :y
 
@@ -7,7 +9,7 @@ class Position
   end
 
   def to_h
-    {x: @x, y: @y}
+    { x: @x, y: @y }
   end
 
   def ==(other)

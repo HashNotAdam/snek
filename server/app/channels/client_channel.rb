@@ -1,9 +1,10 @@
+# frozen_string_literal: true
+
 # Events by players/clients are handled here
 class ClientChannel < Channel
   def subscribed
-    stream_from 'client_channel'
+    stream_from "client_channel"
   end
 
-  def unsubscribed
-  end
+  def unsubscribed; end
 end

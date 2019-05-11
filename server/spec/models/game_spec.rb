@@ -1,13 +1,14 @@
-require 'rails_helper'
+# frozen_string_literal: true
+
+require "rails_helper"
 
 describe Game do
-  def create_test_snake(name, x: , y: )
-    snake = Snake.create(name: name, ip_address: '127.0.0.1')
-    snake.set_position({x: x, y: y})
+  def create_test_snake(name, x:, y:)
+    snake = Snake.create(name: name, ip_address: "127.0.0.1")
+    snake.set_position(x: x, y: y)
 
     snake
   end
-
 
   let!(:game) { Game.new }
 
@@ -19,8 +20,8 @@ describe Game do
 
   describe "snake movement" do
     context "when the snake has registered an intent" do
-      it 'should move the snake in that direction' do
-        snake.set_intent('N')
+      it "should move the snake in that direction" do
+        snake.set_intent("N")
 
         game.tick
         snake.reload
@@ -30,8 +31,8 @@ describe Game do
       end
     end
 
-    context 'when the snake has registered no intent' do
-      it 'should still move the snake according to last intent given' do
+    context "when the snake has registered no intent" do
+      it "should still move the snake according to last intent given" do
         current_position = snake.head
         game.tick
         snake.reload
@@ -44,20 +45,20 @@ describe Game do
     before do
       game.iteration = iteration
     end
-    context 'when a iterations is not divisible by 5' do
+    context "when a iterations is not divisible by 5" do
       let(:iteration) { 26 }
 
-      it 'should grow the snake' do
+      it "should grow the snake" do
         expect(snake.length).to eq(1)
         game.tick
         expect(snake.length).to eq(1)
       end
     end
 
-    context 'when a iterations is divisible by 5' do
+    context "when a iterations is divisible by 5" do
       let(:iteration) { 25 }
 
-      it 'should grow the snake' do
+      it "should grow the snake" do
         expect(snake.length).to eq(1)
         game.tick
         snake.reload
@@ -67,30 +68,30 @@ describe Game do
   end
 
   describe "collecting an item" do
-    let!(:item) { Item.create(item_type: "food", position: {x: 3, y: 3}) }
+    let!(:item) { Item.create(item_type: "food", position: { x: 3, y: 3 }) }
     before do
-      snake.set_intent('E')
+      snake.set_intent("E")
     end
 
-    it 'should pick up the item' do
+    it "should pick up the item" do
       game.tick
       snake.reload
 
-      expect(snake.items).to eq([{"item_type" => "food", "turns_left" => 5}])
+      expect(snake.items).to eq([{ "item_type" => "food", "turns_left" => 5 }])
       expect(Item.all).to be_empty
     end
   end
 
   describe "collisions" do
-    context 'when there is no collision' do
+    context "when there is no collision" do
       let!(:other_snake) { create_test_snake("other", x: 3, y: 3) }
 
       before do
-        snake.set_intent('N')
-        other_snake.set_intent('E')
+        snake.set_intent("N")
+        other_snake.set_intent("E")
       end
 
-      it 'should do nothing' do
+      it "should do nothing" do
         game.tick
 
         expect(Snake.alive.length).to eq(2)
@@ -101,10 +102,10 @@ describe Game do
     context "when running off the board or into an obstacle" do
       before do
         game.world[3][3].type = :wall
-        snake.set_intent('E')
+        snake.set_intent("E")
       end
 
-      it 'should kill the snake' do
+      it "should kill the snake" do
         game.tick
 
         expect(Snake.dead.length).to eq(1)
@@ -116,11 +117,11 @@ describe Game do
       let!(:other_snake) { create_test_snake("other", x: 3, y: 3) }
 
       before do
-        snake.set_intent('E')
-        other_snake.set_intent('N')
+        snake.set_intent("E")
+        other_snake.set_intent("N")
       end
 
-      it 'should kill the snake that is colliding' do
+      it "should kill the snake that is colliding" do
         game.tick
 
         expect(Snake.alive.map(&:id)).to eq([other_snake.id])
@@ -132,10 +133,10 @@ describe Game do
       before do
         snake.segment_positions = [game.world[3][1].to_h]
         snake.save
-        snake.set_intent('W')
+        snake.set_intent("W")
       end
 
-      it 'should kill the snake' do
+      it "should kill the snake" do
         game.tick
 
         expect(Snake.alive).to be_empty
@@ -147,11 +148,11 @@ describe Game do
       let!(:other_snake) { create_test_snake("other", x: 3, y: 3) }
 
       before do
-        snake.set_intent('E')
-        other_snake.set_intent('W')
+        snake.set_intent("E")
+        other_snake.set_intent("W")
       end
 
-      it 'should kill both snakes' do
+      it "should kill both snakes" do
         game.tick
 
         expect(Snake.alive).to be_empty

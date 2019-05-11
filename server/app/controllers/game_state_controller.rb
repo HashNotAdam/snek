@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 class GameStateController < ApplicationController
   def register_snake
     snake = Snake.new(name: params[:name], ip_address: request.remote_ip)
     snake.save
 
-    render json: {snake_id: snake.id, auth_token: snake.auth_token}
+    render json: { snake_id: snake.id, auth_token: snake.auth_token }
   end
 
   def set_intent
@@ -11,7 +13,7 @@ class GameStateController < ApplicationController
 
     if snake
       snake.update_attributes!(intent: params[:intent])
-      render json: {status: "ok"}
+      render json: { status: "ok" }
     end
   end
 
@@ -20,7 +22,7 @@ class GameStateController < ApplicationController
     if map
       render json: Marshal.load(map)
     else
-      render json: {message: "No game in progress"}
+      render json: { message: "No game in progress" }
     end
   end
 end
