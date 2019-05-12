@@ -24,15 +24,13 @@ class HappiestPath
     @previous_move = previous_move
   end
 
-  DIRECTIONS = %w[N E S W].freeze
-
   def call
     paths = find_paths
   end
 
   private
   
-  ROUNDS_OF_PREDICTION = 5
+  ROUNDS_OF_PREDICTION = 3
 
   def find_paths
     start = Time.now
@@ -70,20 +68,28 @@ class HappiestPath
     end
 
     if current_depth < max_depth
-      new_paths.each do |path|
-        next if path[:score].zero?
+      paths_iterator = new_paths.each
+      6.times.map do
+        Thread.new do
+          begin
+            while path = paths_iterator.next
+              next if path[:score].zero?
 
-        aggregate_values = {
-          moves: path[:moves],
-          score: path[:aggregate_score]
-        }
+              aggregate_values = {
+                moves: path[:moves],
+                score: path[:aggregate_score]
+              }
 
-        path[:paths] = calculate_path_scores(
-          offset_position(position, path[:direction]),
-          current_depth + 1,
-          max_depth,
-          aggregate_values
-        )
+              path[:paths] = calculate_path_scores(
+                offset_position(position, path[:direction]),
+                current_depth + 1,
+                max_depth,
+                aggregate_values
+              )
+            end
+          rescue StopIteration
+          end
+        end
       end
     end
 

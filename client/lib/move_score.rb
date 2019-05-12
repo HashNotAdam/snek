@@ -25,10 +25,11 @@ class MoveScore
     'E' => { x: 1, y: 0 },
     'W' => { x: -1, y: 0 },
   }.freeze
+  PREDICTIONS = 3
 
   def call
     OFFSETS.keys.map do |direction|
-      positions = next_positions(@current_position, direction, 3)
+      positions = next_positions(@current_position, direction, PREDICTIONS)
       values = map_values(positions)
       score = movement_score(values)
       {
@@ -74,7 +75,7 @@ class MoveScore
 
   def movement_score(values)
     scores = MapDrawer::OBSTACLE_CHARACTERS.map do |char|
-      values.index(char) || 9000
+      values.index(char) || PREDICTIONS + 1
     end
     scores.min
   end
