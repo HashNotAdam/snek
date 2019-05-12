@@ -54,7 +54,7 @@ EventMachine.run do
       $client.set_intent(@snake_id, move, @auth_token)
     else
       # Oh no - there is no my_snake.  Let's make one
-      @snake_name = "Civil Serpent v4"
+      @snake_name = "Civil Serpent v5"
       puts "Making a new snake: #{@snake_name}"
       response = $client.register_snake(@snake_name)
       @snake_id = response.fetch("snake_id")

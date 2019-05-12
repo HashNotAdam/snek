@@ -3,7 +3,7 @@
 require_relative 'lib/happiest_path'
 
 class RandomSnake
-  def initialize(our_snake, game_state, map, previous_move)
+  def initialize(my_snake, game_state, map, previous_move)
     # Game state is an hash with the following structure
     # {
     #   alive_snakes: [{snake}],
@@ -24,8 +24,8 @@ class RandomSnake
     # The map uses [y][x] for coords so @map[0][0] would represent the top left most tile
     @map = map
 
-    @our_snake = our_snake
-    @current_position = @our_snake.fetch("head")
+    @my_snake = my_snake
+    @current_position = @my_snake.fetch("head")
     @previous_move = previous_move
   end
 
@@ -34,6 +34,7 @@ class RandomSnake
       current_position: @current_position,
       game_state: @game_state,
       map: @map,
+      my_snake: @my_snake,
       previous_move: @previous_move
     )
   end

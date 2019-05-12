@@ -1,25 +1,95 @@
 # frozen_string_literal: true
 
 require_relative 'map_drawer'
+require_relative 'move_score'
 
 class HappiestPath
-  def self.call(current_position:, game_state:, map:, previous_move:)
+  def self.call(current_position:, game_state:, map:, my_snake:, previous_move:)
     new(
       current_position: current_position,
       game_state: game_state,
       map: map,
-      previous_move: previous_move
+      my_snake: my_snake,
+      previous_move: previous_move,
     ).call
   end
 
-  def initialize(current_position:, game_state:, map:, previous_move:)
+  def initialize(
+    current_position:, game_state:, map:, my_snake:, previous_move:
+  )
     @current_position = current_position
     @game_state = game_state
     @map = map
+    @my_snake = my_snake
     @previous_move = previous_move
   end
 
   DIRECTIONS = %w[N E S W].freeze
+
+  def call
+    paths = find_paths
+  end
+
+  private
+  
+  ROUNDS_OF_PREDICTION = 5
+
+  def find_paths
+    start = Time.now
+
+    aggregate_values = { moves: [], score: 0 }
+    paths = calculate_path_scores(
+      @current_position, 1, ROUNDS_OF_PREDICTION, aggregate_values
+    )
+    paths = longest_paths(paths)
+    path = pick_a_path(paths)
+
+    puts "Completed in #{Time.now - start} seconds"
+
+    map = MapDrawer.new(@game_state, @map, @my_snake).draw
+
+    path[:moves].first
+  end
+
+  def calculate_path_scores(
+    position, current_depth, max_depth, aggregate_values
+  )
+    path_moves = aggregate_values[:moves]
+    new_paths = MoveScore.(
+      game_state: @game_state,
+      map: @map,
+      my_snake: @my_snake,
+      path_variables: {
+        current_position: position,
+      }
+    )
+
+    new_paths.each do |path|
+      path[:moves] = path_moves.dup << path[:direction]
+      path[:aggregate_score] = aggregate_values[:score] + path[:score]
+    end
+
+    if current_depth < max_depth
+      new_paths.each do |path|
+        next if path[:score].zero?
+
+        aggregate_values = {
+          moves: path[:moves],
+          score: path[:aggregate_score]
+        }
+
+        path[:paths] = calculate_path_scores(
+          offset_position(position, path[:direction]),
+          current_depth + 1,
+          max_depth,
+          aggregate_values
+        )
+      end
+    end
+
+    new_paths
+  end
+
   OFFSETS = {
     'N' => { x: 0, y: -1 },
     'S' => { x: 0, y: 1 },
@@ -27,73 +97,38 @@ class HappiestPath
     'W' => { x: -1, y: 0 },
   }.freeze
 
-  def call
-    detect_best_path(scored_paths)    
+  def offset_position(position, direction)
+    {
+      "x" => position[:x] + OFFSETS[direction][:x],
+      "y" => position[:y] + OFFSETS[direction][:y]
+    }.with_indifferent_access
   end
 
-  private
-
-  def scored_paths
-    DIRECTIONS.map do |direction|
-      positions = next_positions(direction, 10)
-      values = map_values(positions)
-      score = movement_score(values)
-      {
-        direction: direction,
-        score: score
-      }
-    end
-  end
-
-  def next_positions(direction, num_moves)
-    num_moves.times.map do |index|
-      position = {
-        "x" => @current_position[:x] + (OFFSETS[direction][:x] * (index + 1)),
-        "y" => @current_position[:y] + (OFFSETS[direction][:y] * (index + 1))
+  def longest_paths(paths, max_moves = 0, best_moves = [])
+    paths.each do |values|
+      aggregate_values = {
+        moves: values[:moves],
+        score: values[:aggregate_score],
       }
 
-      position['x'] = 0 if position['x'] < 0
-      if position['x'] >= @map.first.length
-        position['x'] = @map.first.length - 1
-      end
-      position['y'] = 0 if position['y'] < 0
-      if position['y'] >= @map.first.length
-        position['y'] = @map.length - 1
+      if values[:moves].length > max_moves
+        best_moves = [aggregate_values]
+        max_moves = values[:moves].length
+      elsif values[:moves].length == max_moves
+        best_moves << aggregate_values
       end
 
-      position
+      longest_paths(values[:paths], max_moves, best_moves) if values[:paths]
     end
+
+    best_moves
   end
 
-  def map_values(positions)
-    map = MapDrawer.new(@game_state, @map).map_with_pieces
+  def pick_a_path(paths)
+    return { moves: ["N"], score: 0 } if paths.empty?
 
-    positions.map do |position|
-      map[position['y']][position['x']]
-    end
-  end
-
-  def movement_score(values)
-    scores = MapDrawer::OBSTACLE_CHARACTERS.map do |char|
-      values.index(char) || 9000
-    end
-    scores.min
-  end
-
-  def detect_best_path(paths)
-    max = paths.sort_by { |value| value[:score] }.reverse.first
-    selectable_directions = paths.select do |value|
-      value[:score] == max[:score]
-    end
-    
-    return selectable_directions.first[:direction] unless @previous_move
-
-    move = selectable_directions.detect do |value|
-      value[:direction] == @previous_move
-    end
-
-    return move[:direction] if move
-
-    selectable_directions.first[:direction]
+    max_score = paths.max_by { |path| path[:score] }
+    paths.keep_if { |path| path[:score] == max_score[:score] }
+    paths.first
   end
 end
