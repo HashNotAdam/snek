@@ -15,6 +15,7 @@ $client = Client.new("http://#{SNEK_HOST}")
 
 @snake_id = nil
 @auth_token = nil
+@move = nil
 
 EventMachine.run do
   uri = "ws://#{SNEK_HOST}/cable"
@@ -38,24 +39,27 @@ EventMachine.run do
   client.received do |payload|
     puts "Received game state"
 
-    if @map
-      game_state = payload.fetch("message").with_indifferent_access
+    return unless @map
 
-      my_snake = game_state.fetch("alive_snakes").detect { |snake| snake.fetch("id") == @snake_id }
+    game_state = payload.fetch("message").with_indifferent_access
+    my_snake = game_state.fetch("alive_snakes").detect do |snake|
+      snake.fetch("id") == @snake_id
+    end
 
-      if !my_snake
-        # Oh no - there is no my_snake.  Let's make one
-        @snake_name = "#{`whoami`.chomp} #{rand(123_123)}"
-        puts "Making a new snake: #{@snake_name}"
-        response = $client.register_snake(@snake_name)
-        @snake_id = response.fetch("snake_id")
-        @auth_token = response.fetch("auth_token") # Auth token is required to authenticate moves for our snake
-      else
-        # Yay - my_snake lives on - Let's get a move
-        move = RandomSnake.new(my_snake, game_state, @map).intent
-        puts "Snake is at: #{my_snake.fetch(:head)} - Moving #{@snake_name} #{move}"
-        $client.set_intent(@snake_id, move, @auth_token)
-      end
+    if my_snake
+      # Yay - my_snake lives on - Let's get a move
+      move = RandomSnake.new(my_snake, game_state, @map, @move).intent
+      @move = move
+      puts "Snake is at: #{my_snake.fetch(:head)} - Moving #{@snake_name} #{move}"
+      $client.set_intent(@snake_id, move, @auth_token)
+    else
+      # Oh no - there is no my_snake.  Let's make one
+      @snake_name = "Civil Serpent v4"
+      puts "Making a new snake: #{@snake_name}"
+      response = $client.register_snake(@snake_name)
+      @snake_id = response.fetch("snake_id")
+      # Auth token is required to authenticate moves for our snake
+      @auth_token = response.fetch("auth_token")
     end
   end
 end

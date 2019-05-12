@@ -10,11 +10,10 @@ class GameStateController < ApplicationController
 
   def set_intent
     snake = Snake.find_by!(id: params[:id], auth_token: params[:auth_token])
+    return unless snake
 
-    if snake
-      snake.update_attributes!(intent: params[:intent])
-      render json: { status: "ok" }
-    end
+    snake.update_attributes!(intent: params[:intent])
+    render json: { status: "ok" }
   end
 
   def map
