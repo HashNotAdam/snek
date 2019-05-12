@@ -25,33 +25,29 @@ class HappiestPath
   end
 
   def call
-    paths = find_paths
-  end
-
-  private
-  
-  ROUNDS_OF_PREDICTION = 3
-
-  def find_paths
     start = Time.now
 
-    aggregate_values = { moves: [], score: 0 }
-    paths = calculate_path_scores(
-      @current_position, 1, ROUNDS_OF_PREDICTION, aggregate_values
-    )
+    paths = calculate_path_scores(@current_position, 1, ROUNDS_OF_PREDICTION)
     paths = longest_paths(paths)
     path = pick_a_path(paths)
 
     puts "Completed in #{Time.now - start} seconds"
 
-    map = MapDrawer.new(@game_state, @map, @my_snake).draw
+    MapDrawer.new(@game_state, @map, @my_snake).draw
 
     path[:moves].first
   end
 
+  private
+
+  ROUNDS_OF_PREDICTION = 5
+
   def calculate_path_scores(
-    position, current_depth, max_depth, aggregate_values
+    position, current_depth, max_depth, aggregate_values = nil
   )
+    aggregate_values ||= {
+      moves: [], recent_positions: [], score: 0
+    }
     path_moves = aggregate_values[:moves]
     new_paths = MoveScore.(
       game_state: @game_state,
@@ -59,37 +55,33 @@ class HappiestPath
       my_snake: @my_snake,
       path_variables: {
         current_position: position,
+        recent_positions: aggregate_values[:recent_positions]
       }
     )
 
     new_paths.each do |path|
       path[:moves] = path_moves.dup << path[:direction]
+      path[:recent_positions] = aggregate_values[:recent_positions].last(4)
+      path[:recent_positions] << "#{path[:position][:x]}:#{path[:position][:y]}"
       path[:aggregate_score] = aggregate_values[:score] + path[:score]
     end
 
     if current_depth < max_depth
-      paths_iterator = new_paths.each
-      6.times.map do
-        Thread.new do
-          begin
-            while path = paths_iterator.next
-              next if path[:score].zero?
+      new_paths.each do |path|
+        next if path[:score] < 1
 
-              aggregate_values = {
-                moves: path[:moves],
-                score: path[:aggregate_score]
-              }
+        aggregate_values = {
+          moves: path[:moves],
+          recent_positions: path[:recent_positions],
+          score: path[:aggregate_score]
+        }
 
-              path[:paths] = calculate_path_scores(
-                offset_position(position, path[:direction]),
-                current_depth + 1,
-                max_depth,
-                aggregate_values
-              )
-            end
-          rescue StopIteration
-          end
-        end
+        path[:paths] = calculate_path_scores(
+          offset_position(position, path[:direction]),
+          current_depth + 1,
+          max_depth,
+          aggregate_values
+        )
       end
     end
 

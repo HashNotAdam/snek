@@ -39,7 +39,7 @@ EventMachine.run do
   client.received do |payload|
     puts "Received game state"
 
-    return unless @map
+    break unless @map
 
     game_state = payload.fetch("message").with_indifferent_access
     my_snake = game_state.fetch("alive_snakes").detect do |snake|
@@ -54,12 +54,16 @@ EventMachine.run do
       $client.set_intent(@snake_id, move, @auth_token)
     else
       # Oh no - there is no my_snake.  Let's make one
-      @snake_name = "πthon v6"
+      @snake_name = "Snake on a (geometric) plane"
       puts "Making a new snake: #{@snake_name}"
       response = $client.register_snake(@snake_name)
-      @snake_id = response.fetch("snake_id")
-      # Auth token is required to authenticate moves for our snake
-      @auth_token = response.fetch("auth_token")
+      if response["snake_id"]
+        @snake_id = response.fetch("snake_id")
+        # Auth token is required to authenticate moves for our snake
+        @auth_token = response.fetch("auth_token")
+      else
+        puts "Did not get a snake id - got #{response.inspect}"
+      end
     end
   end
 end

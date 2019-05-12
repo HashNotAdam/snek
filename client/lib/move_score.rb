@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'map_drawer'
+require_relative "map_drawer"
 
 class MoveScore
   def self.call(game_state:, map:, my_snake:, path_variables:)
@@ -17,24 +17,31 @@ class MoveScore
     @game_state = game_state
     @map = map
     @my_snake = my_snake
+    @recent_positions = path_variables[:recent_positions]
   end
 
   OFFSETS = {
-    'N' => { x: 0, y: -1 },
-    'S' => { x: 0, y: 1 },
-    'E' => { x: 1, y: 0 },
-    'W' => { x: -1, y: 0 },
+    "N" => { x: 0, y: -1 },
+    "S" => { x: 0, y: 1 },
+    "E" => { x: 1, y: 0 },
+    "W" => { x: -1, y: 0 },
   }.freeze
-  PREDICTIONS = 3
+  PREDICTIONS = 5
 
   def call
     OFFSETS.keys.map do |direction|
       positions = next_positions(@current_position, direction, PREDICTIONS)
       values = map_values(positions)
-      score = movement_score(values)
+      position = offset_position(@current_position, direction, 1)
+      score =
+        @recent_positions.include?("#{position[:x]}:#{position[:y]}") ?
+        0.5 :
+        movement_score(values)
+
       {
         direction: direction,
-        score: score
+        score: score,
+        position: position
       }
     end
   end
@@ -45,13 +52,13 @@ class MoveScore
     num_moves.times.map do |index|
       position = offset_position(new_position, direction, index + 1)
 
-      position['x'] = 0 if position['x'] < 0
-      if position['x'] >= @map.first.length
-        position['x'] = @map.first.length - 1
+      position["x"] = 0 if position["x"] < 0
+      if position["x"] >= @map.first.length
+        position["x"] = @map.first.length - 1
       end
-      position['y'] = 0 if position['y'] < 0
-      if position['y'] >= @map.first.length
-        position['y'] = @map.length - 1
+      position["y"] = 0 if position["y"] < 0
+      if position["y"] >= @map.first.length
+        position["y"] = @map.length - 1
       end
 
       position
@@ -69,7 +76,7 @@ class MoveScore
     map = MapDrawer.new(@game_state, @map, @my_snake).map_with_pieces
 
     positions.map do |position|
-      map[position['y']][position['x']]
+      map[position["y"]][position["x"]]
     end
   end
 
